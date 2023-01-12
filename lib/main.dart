@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:nota/constants.dart';
 import 'package:nota/providers/auth.dart';
 import 'package:nota/providers/customer.dart';
 import 'package:nota/providers/gabah.dart';
@@ -26,7 +27,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: AppConstants.appName,
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
