@@ -101,6 +101,7 @@ class _TabReceiptScreenState extends State<TabReceiptScreen> {
 
   Future<void> _refresh() async {
     final token = Provider.of<Auth>(context, listen: false).token;
+    Provider.of<Customer>(context, listen: false).resetFilter();
     Provider.of<Customer>(context, listen: false).getCustomers(token);
     Provider.of<Gabah>(context, listen: false).getData(token);
   }

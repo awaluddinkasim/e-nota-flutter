@@ -10,6 +10,8 @@ class TabAccountScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    precacheImage(Image.asset("assets/img/avatar.jpg").image, context);
+
     return LoaderOverlay(
       child: SafeArea(
         child: ListView(

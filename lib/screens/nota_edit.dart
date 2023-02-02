@@ -4,7 +4,6 @@ import 'package:intl/intl.dart';
 import 'package:loader_overlay/loader_overlay.dart';
 import 'package:nota/app.dart';
 import 'package:nota/providers/auth.dart';
-import 'package:nota/providers/nota.dart';
 import 'package:nota/services/dio.dart';
 import 'package:provider/provider.dart';
 
@@ -155,7 +154,6 @@ class _NotaEditScreenState extends State<NotaEditScreen> {
   void _update(BuildContext context) async {
     final token = Provider.of<Auth>(context, listen: false).token;
     final navigator = Navigator.of(context);
-    final notaProvider = Provider.of<Nota>(context, listen: false);
 
     Map data = {
       "id": widget.nota['id'],
@@ -164,7 +162,6 @@ class _NotaEditScreenState extends State<NotaEditScreen> {
 
     Response response = await dio(token: token).put("nota", data: data);
     if (response.statusCode == 200) {
-      notaProvider.getNota(token);
       navigator.pushAndRemoveUntil(
         MaterialPageRoute(
           builder: (context) => MainApp(),

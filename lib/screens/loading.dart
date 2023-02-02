@@ -4,7 +4,6 @@ import 'package:nota/app.dart';
 import 'package:nota/providers/auth.dart';
 import 'package:nota/providers/customer.dart';
 import 'package:nota/providers/gabah.dart';
-import 'package:nota/providers/nota.dart';
 import 'package:nota/screens/login.dart';
 import 'package:nota/screens/signature.dart';
 import 'package:provider/provider.dart';
@@ -50,7 +49,6 @@ class _LoadingScreenState extends State<LoadingScreen> {
       if (auth.authenticated != null && auth.authenticated == true) {
         Provider.of<Customer>(context, listen: false).getCustomers(auth.token);
         Provider.of<Gabah>(context, listen: false).getData(auth.token);
-        Provider.of<Nota>(context, listen: false).getNota(auth.token);
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(
             builder: (context) {

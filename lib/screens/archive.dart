@@ -1,36 +1,75 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:loader_overlay/loader_overlay.dart';
 import 'package:nota/providers/auth.dart';
-import 'package:nota/providers/customer.dart';
-import 'package:nota/screens/archive.dart';
-import 'package:persistent_bottom_nav_bar/persistent_tab_view.dart';
+import 'package:nota/screens/nota_edit.dart';
+import 'package:nota/screens/pdf.dart';
+import 'package:nota/services/dio.dart';
 import 'package:provider/provider.dart';
 
-class TabArchiveScreen extends StatefulWidget {
-  const TabArchiveScreen({super.key});
+class ArchiveScreen extends StatefulWidget {
+  final String id;
+  final String nama;
+  const ArchiveScreen({super.key, required this.id, required this.nama});
 
   @override
-  State<TabArchiveScreen> createState() => _TabArchiveScreenState();
+  State<ArchiveScreen> createState() => _ArchiveScreenState();
 }
 
-class _TabArchiveScreenState extends State<TabArchiveScreen> {
+class _ArchiveScreenState extends State<ArchiveScreen> {
   final _search = TextEditingController();
+  bool _isLoading = true;
+  bool _filtered = false;
+  Iterable _daftarNota = [];
+  Iterable _filteredNota = [];
+
+  Future<void> _getNota() async {
+    final token = Provider.of<Auth>(context, listen: false).token;
+
+    Response response = await dio(token: token).get('nota/${widget.id}');
+    if (response.statusCode == 200) {
+      setState(() {
+        _daftarNota = response.data['nota'];
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _filter(String keyword) {
+    setState(() {
+      _filtered = true;
+      _filteredNota = _daftarNota.where(
+        (element) => element.toString().toLowerCase().contains(keyword),
+      );
+    });
+  }
+
+  void _resetFilter() {
+    setState(() {
+      _filtered = false;
+      _filteredNota = [];
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    Future.delayed(Duration.zero, () {
+      _getNota();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    Iterable customers = !Provider.of<Customer>(context).archiveFiltered
-        ? Provider.of<Customer>(context).customers
-        : Provider.of<Customer>(context).filteredArchiveCustomers;
-    return LoaderOverlay(
-      child: RefreshIndicator(
-        onRefresh: _refresh,
-        child: SafeArea(
-          top: false,
+    return Scaffold(
+      body: SafeArea(
+        top: false,
+        child: RefreshIndicator(
+          onRefresh: _getNota,
           child: ListView(
             physics: const AlwaysScrollableScrollPhysics(),
             children: [
               _header(context),
-              _body(customers, context),
+              _body(_filtered ? _filteredNota : _daftarNota, context),
             ],
           ),
         ),
@@ -38,20 +77,19 @@ class _TabArchiveScreenState extends State<TabArchiveScreen> {
     );
   }
 
-  Padding _body(Iterable<dynamic> customers, BuildContext context) {
-    final isLoading = Provider.of<Customer>(context).isLoading;
+  Padding _body(Iterable<dynamic> daftarNota, BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: 10,
       ),
-      child: isLoading
+      child: _isLoading
           ? const Center(
               child: CircularProgressIndicator(),
             )
           : Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                if (customers.isEmpty)
+                if (daftarNota.isEmpty)
                   Container(
                     padding: const EdgeInsets.symmetric(
                       vertical: 20,
@@ -67,19 +105,23 @@ class _TabArchiveScreenState extends State<TabArchiveScreen> {
                     ),
                   )
                 else
-                  for (var customer in customers) _customer(context, customer),
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 10),
+                    child: Text(
+                      "Daftar nota ${widget.nama}",
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                      ),
+                    ),
+                  ),
+                for (var nota in daftarNota) _nota(nota),
               ],
             ),
     );
   }
 
-  Future<void> _refresh() async {
-    final token = Provider.of<Auth>(context, listen: false).token;
-    Provider.of<Customer>(context, listen: false).resetArchiveFilter();
-    Provider.of<Customer>(context, listen: false).getCustomers(token);
-  }
-
-  Padding _customer(BuildContext context, Map data) {
+  Padding _nota(nota) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Container(
@@ -92,13 +134,27 @@ class _TabArchiveScreenState extends State<TabArchiveScreen> {
           borderRadius: BorderRadius.circular(8),
           child: InkWell(
             onTap: () {
-              PersistentNavBarNavigator.pushNewScreen(
-                context,
-                screen: ArchiveScreen(
-                  id: "${data['id']}",
-                  nama: "${data['nama']}",
+              Navigator.of(context, rootNavigator: true).push(
+                MaterialPageRoute(
+                  builder: (context) => NotaPDF(
+                    hasBackButton: true,
+                    kode: nota['nomor'].toString().replaceAll('/', '-'),
+                    actions: [
+                      IconButton(
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => NotaEditScreen(
+                                nota: nota,
+                              ),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.edit),
+                      ),
+                    ],
+                  ),
                 ),
-                withNavBar: true,
               );
             },
             borderRadius: BorderRadius.circular(8),
@@ -114,14 +170,15 @@ class _TabArchiveScreenState extends State<TabArchiveScreen> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Text(
-                          "${data['nama']}",
+                          "Nota: ${nota['nomor']}",
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
-                            fontSize: 20,
+                            fontSize: 18,
                           ),
                         ),
-                        Text("${data['no_hp']}"),
+                        Text("${nota['gabah']['jenis']}"),
+                        Text("${nota['tanggal']}"),
                       ],
                     ),
                   ),
@@ -136,8 +193,6 @@ class _TabArchiveScreenState extends State<TabArchiveScreen> {
   }
 
   Transform _header(BuildContext context) {
-    final customerProvider = Provider.of<Customer>(context, listen: false);
-
     return Transform(
       transform: Matrix4.translationValues(0, -50, 0),
       child: Container(
@@ -149,26 +204,32 @@ class _TabArchiveScreenState extends State<TabArchiveScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(
-                height: 12,
-              ),
-              const Text(
-                "Arsip nota",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20,
-                ),
-              ),
-              const SizedBox(
-                height: 13,
+              Row(
+                children: [
+                  IconButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                    icon: const Icon(
+                      Icons.arrow_back,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const Text(
+                    "Daftar nota",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20,
+                    ),
+                  ),
+                ],
               ),
               TextField(
                 controller: _search,
                 onChanged: (value) {
-                  // print(value);
                   if (value == "") {
-                    customerProvider.resetArchiveFilter();
+                    _resetFilter();
                   }
                 },
                 decoration: InputDecoration(
@@ -176,13 +237,13 @@ class _TabArchiveScreenState extends State<TabArchiveScreen> {
                     vertical: 0,
                     horizontal: 20,
                   ),
-                  hintText: "Cari nama pelanggan...",
+                  hintText: "Cari nomor nota...",
                   filled: true,
                   fillColor: Colors.white,
                   suffixIcon: IconButton(
                     onPressed: () {
                       if (_search.text != "") {
-                        customerProvider.filterArchiveCustomer(_search.text);
+                        _filter(_search.text);
                       }
                     },
                     icon: const Icon(Icons.search),

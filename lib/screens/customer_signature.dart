@@ -5,7 +5,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:loader_overlay/loader_overlay.dart';
 import 'package:nota/providers/auth.dart';
-import 'package:nota/providers/nota.dart';
 import 'package:nota/screens/pdf.dart';
 import 'package:nota/services/dio.dart';
 import 'package:path_provider/path_provider.dart';
@@ -24,7 +23,6 @@ class CustomerSignatureScreen extends StatelessWidget {
 
   void submit(context) async {
     final token = Provider.of<Auth>(context, listen: false).token;
-    final nota = Provider.of<Nota>(context, listen: false);
     final navigator = Navigator.of(context);
 
     Uint8List? image = await _controller.toPngBytes();
@@ -40,7 +38,6 @@ class CustomerSignatureScreen extends StatelessWidget {
     try {
       Response response = await dio(token: token).post('nota', data: data);
       if (response.statusCode == 200) {
-        nota.getNota(token);
         navigator.pushAndRemoveUntil(
           MaterialPageRoute(
             builder: (context) => NotaPDF(
@@ -51,7 +48,7 @@ class CustomerSignatureScreen extends StatelessWidget {
         );
       }
     } on DioError catch (e) {
-      print(e.response!.data);
+      print(e.response!.data['message']);
     }
   }
 

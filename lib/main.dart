@@ -3,7 +3,6 @@ import 'package:nota/constants.dart';
 import 'package:nota/providers/auth.dart';
 import 'package:nota/providers/customer.dart';
 import 'package:nota/providers/gabah.dart';
-import 'package:nota/providers/nota.dart';
 import 'package:nota/screens/loading.dart';
 import 'package:provider/provider.dart';
 
@@ -13,7 +12,6 @@ void main() {
       providers: [
         ChangeNotifierProvider(create: (context) => Auth()),
         ChangeNotifierProvider(create: (context) => Customer()),
-        ChangeNotifierProvider(create: (context) => Nota()),
         ChangeNotifierProvider(create: (context) => Gabah()),
       ],
       child: const MyApp(),
